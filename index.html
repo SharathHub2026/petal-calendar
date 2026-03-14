@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Petal Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #FAF6FF;
+  --bg2:      #F0E9FF;
+  --card:     #FFFFFF;
+  --text:     #2D2245;
+  --text2:    #7B6A96;
+  --text3:    #C0B0D8;
+  --border:   rgba(160,130,210,0.12);
+  --shadow:   0 8px 32px rgba(140,100,200,0.10);
+  --shadow-sm:0 2px 12px rgba(140,100,200,0.08);
+  --today-bg: #C4B5FD;
+  --today-txt:#fff;
+  --sel-bg:   #EDE8FF;
+  --radius:   20px;
+  --radius-sm:12px;
+  --radius-xs:8px;
+  --font:     'Nunito', sans-serif;
+  --serif:    'DM Serif Display', serif;
+
+  --personal-c:#7EC8E3; --personal-bg:#E6F6FB; --personal-tx:#1A6B82;
+  --work-c:    #B5A4F5; --work-bg:    #EEEAFF; --work-tx:    #4A2FA0;
+  --birthday-c:#FBBF24; --birthday-bg:#FFFBEB; --birthday-tx:#92650A;
+  --menstrual-c:#F87171;--menstrual-bg:#FFF1F1;--menstrual-tx:#9B1F1F;
+  --workevent-c:#4ADE80;--workevent-bg:#EDFFF5;--workevent-tx:#156535;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;min-height:100vh;background:var(--bg);font-family:var(--font);color:var(--text);overscroll-behavior:none;}
+
+.app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+
+/* ── HEADER ── */
+.header{padding:20px 20px 0;background:var(--bg);position:sticky;top:0;z-index:10;}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.month-nav{display:flex;align-items:center;gap:10px;}
+.month-title{font-family:var(--serif);font-size:22px;color:var(--text);cursor:pointer;user-select:none;}
+.month-title em{font-style:italic;color:var(--text2);}
+.nav-btn{width:34px;height:34px;border:none;background:var(--card);border-radius:50%;font-size:18px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);transition:all .15s;}
+.nav-btn:hover{background:var(--bg2);transform:scale(1.05);}
+.view-toggle{display:flex;background:var(--card);border-radius:99px;padding:3px;box-shadow:var(--shadow-sm);}
+.vtb{border:none;background:none;padding:6px 14px;border-radius:99px;font-family:var(--font);font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .2s;}
+.vtb.active{background:var(--today-bg);color:#fff;}
+
+/* ── CATEGORY LEGEND ── */
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--text2);background:var(--card);border-radius:99px;padding:3px 9px;box-shadow:var(--shadow-sm);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+
+/* ── WEEKDAYS ROW ── */
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;padding:0 12px;margin-bottom:6px;}
+.weekday{font-size:11px;font-weight:800;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;padding:4px 0;}
+.weekday:last-child{color:#F87171;}
+
+/* ── MONTH GRID ── */
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:0 8px 12px;border-left:1px solid var(--border);border-top:1px solid var(--border);}
+.day-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:6px 2px 6px;cursor:pointer;transition:background .15s;position:relative;min-height:70px;}
+.day-cell:active{background:var(--bg2);}
+.day-cell.other-month{opacity:.3;}
+.day-num{font-size:14px;font-weight:800;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;transition:background .15s,color .15s;}
+.day-cell.today .day-num{background:var(--today-bg);color:var(--today-txt);box-shadow:0 2px 8px rgba(196,181,253,.5);}
+.day-cell.selected:not(.today) .day-num{background:var(--sel-bg);color:var(--text);}
+.day-cell.sunday .day-num{color:#F87171;}
+.day-cell.other-month .day-num{color:var(--text3);}
+/* Day colour states — full cell background */
+.day-cell.dc-red{background:rgba(248,113,113,.22);}
+.day-cell.dc-red .day-num:not(.today-num){background:#F87171;color:#fff;}
+.day-cell.dc-green{background:rgba(74,222,128,.22);}
+.day-cell.dc-green .day-num:not(.today-num){background:#4ADE80;color:#fff;}
+.day-cell.dc-purple{background:rgba(167,139,250,.22);}
+.day-cell.dc-purple .day-num:not(.today-num){background:#A78BFA;color:#fff;}
+.day-cell.dc-black{background:rgba(45,34,69,.15);}
+.day-cell.dc-black .day-num:not(.today-num){background:#2D2245;color:#fff;}
+.icons-row{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;margin-top:3px;max-width:100%;}
+.cat-icon{font-size:11px;line-height:1;}
+
+/* ── SHEET COLOUR PICKER ── */
+.sheet-color-row{display:flex;align-items:center;gap:8px;padding:10px 16px 8px;border-bottom:1px solid var(--border);background:var(--bg);}
+.sheet-color-label{font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;}
+.sheet-color-btns{display:flex;gap:8px;flex:1;}
+.sc-btn{flex:1;border:2px solid transparent;border-radius:var(--radius-xs);padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:all .15s;background:var(--bg2);}
+.sc-btn.active{border-color:currentColor;transform:scale(1.05);}
+.sc-btn:active{transform:scale(.96);}
+.sc-swatch{width:22px;height:22px;border-radius:50%;flex-shrink:0;}
+.sc-label{font-size:9px;font-weight:800;text-align:center;line-height:1.2;}
+.sc-clear{width:36px;height:36px;border:2px dashed var(--border);border-radius:var(--radius-xs);background:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.sc-clear:active{background:var(--bg2);}
+
+/* ── SHEET ACTION ROW ── */
+.sheet-action-row{display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);}
+.sa-btn{flex:1;border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:9px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;background:var(--card);transition:all .15s;}
+.sa-btn:active{background:var(--bg2);transform:scale(.97);}
+.sa-icon{font-size:18px;}
+.sa-label{font-size:10px;font-weight:800;color:var(--text2);}
+
+/* ── WEEK VIEW ── */
+.week-view{flex:1;overflow-y:auto;padding:0 12px 80px;}
+.week-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:8px;}
+.wh-day{text-align:center;cursor:pointer;}
+.wh-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;}
+.wh-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:4px auto 0;font-size:14px;font-weight:700;}
+.wh-day.today .wh-num{background:var(--today-bg);color:#fff;}
+.wh-day.selected .wh-num{background:var(--sel-bg);}
+.wh-day.sunday .wh-num{color:#F87171;}
+.week-events{display:flex;flex-direction:column;gap:10px;padding-bottom:20px;}
+.week-day-section{background:var(--card);border-radius:var(--radius-sm);padding:12px;box-shadow:var(--shadow-sm);}
+.wds-header{font-size:13px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.wds-empty{font-size:12px;color:var(--text3);font-style:italic;}
+
+/* ── EVENT CARD ── */
+.event-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:6px;cursor:pointer;transition:opacity .15s;}
+.event-card:last-child{margin-bottom:0;}
+.event-card:hover{opacity:.85;}
+.ev-icon{font-size:18px;flex-shrink:0;}
+.ev-body{flex:1;min-width:0;}
+.ev-title{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ev-meta{font-size:11px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:6px;}
+.ev-time{display:flex;align-items:center;gap:3px;}
+.ev-recur{font-size:10px;background:rgba(0,0,0,.06);border-radius:99px;padding:1px 6px;}
+.ev-del{width:26px;height:26px;border:none;background:rgba(0,0,0,.05);border-radius:50%;font-size:14px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.ev-del:hover{background:rgba(248,113,113,.15);color:#F87171;}
+
+/* ── QUICK NOTE CARD ── */
+.qnote-card{background:#FFFBEB;border:1.5px dashed #FBBF24;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px;}
+.qnote-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.qnote-text{flex:1;font-size:13px;color:#7B6A96;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
+.qnote-del{width:22px;height:22px;border:none;background:rgba(0,0,0,.05);border-radius:50%;font-size:12px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qnote-del:hover{background:rgba(248,113,113,.15);color:#F87171;}
+
+/* ── QUICK NOTE MODAL ── */
+.qnote-modal{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:430px;background:var(--card);border-radius:24px 24px 0 0;z-index:55;transition:transform .3s cubic-bezier(.4,0,.2,1);padding:16px 20px 32px;box-shadow:0 -8px 40px rgba(140,100,200,.18);}
+.qnote-modal.open{transform:translateX(-50%) translateY(0);}
+.qnote-modal-handle{width:36px;height:4px;background:var(--text3);border-radius:99px;margin:0 auto 14px;}
+.qnote-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.qnote-modal-title{font-family:var(--serif);font-size:18px;}
+.qnote-save{border:none;background:var(--today-bg);color:#fff;border-radius:var(--radius-xs);padding:8px 18px;font-family:var(--font);font-size:13px;font-weight:800;cursor:pointer;}
+
+/* ── DAY COLOUR LEGEND ── */
+.dc-legend{display:flex;gap:8px;padding:0 12px;margin-bottom:10px;flex-wrap:wrap;}
+.dc-legend-item{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--text2);}
+.dc-legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* ── EVENT CARD PREFIX ── */
+.ev-prefix{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.7;display:block;margin-bottom:1px;}
+
+/* ── BOTTOM SHEET ── */
+.overlay{position:fixed;inset:0;background:rgba(45,34,69,.25);z-index:40;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(2px);}
+.overlay.open{opacity:1;pointer-events:all;}
+.bottom-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:430px;background:var(--card);border-radius:24px 24px 0 0;z-index:50;transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:88vh;min-height:340px;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(140,100,200,.18);}
+.bottom-sheet.open{transform:translateX(-50%) translateY(0);}
+.sheet-handle{width:36px;height:4px;background:var(--text3);border-radius:99px;margin:12px auto 0;}
+.sheet-header{padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.sheet-date{font-family:var(--serif);font-size:20px;}
+.sheet-date em{font-style:italic;color:var(--text2);}
+.sheet-add{width:34px;height:34px;border:none;background:var(--today-bg);border-radius:50%;color:#fff;font-size:20px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(196,181,253,.5);transition:transform .15s;}
+.sheet-add:hover{transform:scale(1.08);}
+.sheet-body{overflow-y:auto;padding:12px 16px 24px;flex:1;}
+.sheet-empty{text-align:center;padding:32px 0;color:var(--text3);font-size:14px;}
+.sheet-empty .empty-icon{font-size:36px;display:block;margin-bottom:8px;}
+
+/* ── MODAL ── */
+.modal-wrap{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;pointer-events:none;opacity:0;transition:opacity .2s;}
+.modal-wrap.open{pointer-events:all;opacity:1;}
+.modal-bg{position:absolute;inset:0;background:rgba(45,34,69,.3);backdrop-filter:blur(3px);}
+.modal{position:relative;width:100%;max-width:430px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;padding:0 0 env(safe-area-inset-bottom,20px);box-shadow:0 -8px 40px rgba(140,100,200,.2);transform:translateY(40px);transition:transform .25s cubic-bezier(.4,0,.2,1);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+.modal-wrap.open .modal{transform:translateY(0);}
+.modal-handle{width:36px;height:4px;background:var(--text3);border-radius:99px;margin:12px auto 0;}
+.modal-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.modal-title{font-family:var(--serif);font-size:19px;}
+.modal-close{width:32px;height:32px;border:none;background:var(--bg2);border-radius:50%;font-size:18px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.modal-body{overflow-y:auto;padding:16px 20px 20px;flex:1;}
+
+.form-label{font-size:12px;font-weight:800;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;margin-top:16px;display:block;}
+.form-label:first-child{margin-top:0;}
+
+/* Category selector */
+.cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.cat-btn{border:2px solid transparent;border-radius:var(--radius-sm);padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:all .15s;background:var(--bg);}
+.cat-btn .cat-emoji{font-size:20px;}
+.cat-btn .cat-lbl{font-size:9px;font-weight:800;text-align:center;line-height:1.2;}
+.cat-btn.selected{border-color:currentColor;}
+
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--today-bg);}
+.form-input::placeholder{color:var(--text3);}
+textarea.form-input{resize:none;min-height:80px;}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* Toggle switch */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
+.toggle-label{font-size:14px;font-weight:600;color:var(--text);}
+.toggle{position:relative;width:44px;height:26px;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--text3);border-radius:99px;cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;}
+.toggle input:checked+.toggle-slider{background:var(--today-bg);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);}
+
+.reminder-opts{margin-top:8px;display:none;}
+.reminder-opts.show{display:block;}
+
+.recur-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.recur-btn{border:1.5px solid var(--border);background:var(--bg);border-radius:var(--radius-xs);padding:8px 4px;font-family:var(--font);font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .15s;text-align:center;}
+.recur-btn.selected{background:var(--today-bg);border-color:var(--today-bg);color:#fff;}
+
+.save-btn{width:100%;margin-top:20px;padding:15px;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,#C4B5FD,#A78BFA);color:#fff;font-family:var(--font);font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(167,139,250,.4);transition:transform .15s,box-shadow .15s;letter-spacing:.02em;}
+.save-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(167,139,250,.5);}
+.save-btn:active{transform:translateY(0);}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:28px;right:calc(50% - 215px + 20px);width:56px;height:56px;border:none;border-radius:50%;background:linear-gradient(135deg,#C4B5FD,#A78BFA);color:#fff;font-size:28px;font-weight:300;cursor:pointer;box-shadow:0 6px 24px rgba(167,139,250,.45);z-index:30;transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;}
+.fab:hover{transform:scale(1.08);box-shadow:0 8px 30px rgba(167,139,250,.55);}
+@media(max-width:430px){.fab{right:20px;}}
+
+/* ── MISC ── */
+.hidden{display:none!important;}
+.scroll-content{flex:1;overflow-y:auto;padding-bottom:80px;}
+
+/* ── NOTIFICATION TOAST ── */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--card);border-radius:var(--radius-sm);padding:12px 20px;box-shadow:var(--shadow);z-index:999;font-size:14px;font-weight:700;color:var(--text);transition:transform .3s;white-space:nowrap;max-width:340px;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── MINI MONTH NAV ── */
+.mini-nav{display:flex;gap:6px;padding:0 12px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.mini-nav::-webkit-scrollbar{display:none;}
+.mini-month{flex-shrink:0;padding:5px 14px;border-radius:99px;font-size:12px;font-weight:800;color:var(--text2);background:var(--card);cursor:pointer;transition:all .15s;box-shadow:var(--shadow-sm);}
+.mini-month.active{background:var(--today-bg);color:#fff;}
+
+@keyframes pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .25s ease both;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="month-nav">
+        <button class="nav-btn" id="prevBtn">&#8249;</button>
+        <div class="month-title" id="monthTitle"></div>
+        <button class="nav-btn" id="nextBtn">&#8250;</button>
+      </div>
+      <div class="view-toggle">
+        <button class="vtb active" id="monthVBtn" onclick="setView('month')">Month</button>
+        <button class="vtb" id="weekVBtn" onclick="setView('week')">Week</button>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="dc-legend">
+      <div class="dc-legend-item"><div class="dc-legend-dot" style="background:#F87171"></div>Leave</div>
+      <div class="dc-legend-item"><div class="dc-legend-dot" style="background:#4ADE80"></div>Office</div>
+      <div class="dc-legend-item"><div class="dc-legend-dot" style="background:#A78BFA"></div>WFH</div>
+      <div class="dc-legend-item"><div class="dc-legend-dot" style="background:#2D2245"></div>Holiday</div>
+      <span style="font-size:11px;color:var(--text3);margin-left:auto">tap a day to mark</span>
+    </div>
+    <div class="notif-bar default" id="notifBar" onclick="handleNotifTap()">
+      <span id="notifBarText">🔔 Tap to enable lock screen notifications</span>
+      <span class="notif-bar-right" id="notifBarRight">Required for reminders</span>
+    </div>
+
+  </div>
+
+  <!-- MONTH VIEW -->
+  <div class="scroll-content" id="monthView">
+    <div class="weekdays">
+      <div class="weekday">MON</div><div class="weekday">TUE</div>
+      <div class="weekday">WED</div><div class="weekday">THU</div>
+      <div class="weekday">FRI</div><div class="weekday">SAT</div>
+      <div class="weekday sun">SUN</div>
+    </div>
+    <div class="month-grid" id="monthGrid"></div>
+  </div>
+
+  <!-- WEEK VIEW -->
+  <div class="scroll-content hidden" id="weekView">
+    <div class="week-header" id="weekHeader"></div>
+    <div class="week-events" id="weekEvents"></div>
+  </div>
+
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+
+<!-- BOTTOM SHEET -->
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-date" id="sheetDate"></div>
+    <button class="modal-close" onclick="closeSheet()" style="margin-left:auto">&#215;</button>
+  </div>
+  <!-- COLOUR PICKER — always visible, primary action -->
+  <div class="sheet-color-row">
+    <span class="sheet-color-label">Mark day</span>
+    <div class="sheet-color-btns" id="sheetColorBtns"></div>
+    <button class="sc-clear" onclick="clearDayColor()" title="Clear colour">&#215;</button>
+  </div>
+  <!-- ACTION ROW -->
+  <div class="sheet-action-row">
+    <button class="sa-btn" onclick="openModal()">
+      <span class="sa-icon">&#128197;</span>
+      <span class="sa-label">Add Event</span>
+    </button>
+    <button class="sa-btn" onclick="openQnote()">
+      <span class="sa-icon">&#128221;</span>
+      <span class="sa-label">Quick Note</span>
+    </button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-wrap" id="modalWrap">
+  <div class="modal-bg" onclick="closeModal()"></div>
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">New Event</div>
+      <button class="modal-close" onclick="closeModal()">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <span class="form-label">Category</span>
+      <div class="cat-grid" id="catGrid"></div>
+
+      <span class="form-label">Title</span>
+      <input class="form-input" id="evTitle" type="text" placeholder="What's happening?"/>
+
+      <div class="row2">
+        <div>
+          <span class="form-label">Date</span>
+          <input class="form-input" id="evDate" type="date"/>
+        </div>
+        <div>
+          <span class="form-label">Time</span>
+          <input class="form-input" id="evTime" type="time"/>
+        </div>
+      </div>
+
+      <span class="form-label">Repeat</span>
+      <div class="recur-grid">
+        <button class="recur-btn selected" data-recur="none" onclick="selectRecur(this)">None</button>
+        <button class="recur-btn" data-recur="daily" onclick="selectRecur(this)">Daily</button>
+        <button class="recur-btn" data-recur="weekly" onclick="selectRecur(this)">Weekly</button>
+        <button class="recur-btn" data-recur="monthly" onclick="selectRecur(this)">Monthly</button>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">&#128276; Set Reminder</span>
+        <label class="toggle">
+          <input type="checkbox" id="reminderToggle" onchange="toggleReminder(this)"/>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="reminder-opts" id="reminderOpts">
+        <select class="form-input" id="reminderTime">
+          <option value="5">5 minutes before</option>
+          <option value="10">10 minutes before</option>
+          <option value="15" selected>15 minutes before</option>
+          <option value="30">30 minutes before</option>
+          <option value="60">1 hour before</option>
+          <option value="1440">1 day before</option>
+        </select>
+      </div>
+
+      <span class="form-label">Notes</span>
+      <textarea class="form-input" id="evNotes" placeholder="Add a note..."></textarea>
+
+      <button class="save-btn" onclick="saveEvent()">Save Event &#10024;</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK NOTE MODAL -->
+<div class="qnote-modal" id="qnoteModal">
+  <div class="qnote-modal-handle"></div>
+  <div class="qnote-modal-header">
+    <div class="qnote-modal-title">📝 Quick Note</div>
+    <button class="modal-close" onclick="closeQnote()">&#215;</button>
+  </div>
+  <textarea class="form-input" id="qnoteInput" placeholder="Type a quick note for this day..." style="min-height:100px;margin-bottom:12px"></textarea>
+  <button class="qnote-save" onclick="saveQnote()">Save Note</button>
+</div>
+
+<!-- QUICK NOTE MODAL -->
+<div class="qnote-modal" id="qnoteModal">
+  <div class="qnote-modal-handle"></div>
+  <div class="qnote-modal-header">
+    <div class="qnote-modal-title">&#128221; Quick Note</div>
+    <button class="modal-close" onclick="closeQnote()">&#215;</button>
+  </div>
+  <textarea class="form-input" id="qnoteInput" placeholder="Type a quick note for this day..." style="min-height:100px;margin-bottom:12px"></textarea>
+  <button class="qnote-save" onclick="saveQnote()">Save Note</button>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openModal()">+</button>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────
+const CATS = {
+  personal:  { label:'Personal',   icon:'🌟', color:'#7EC8E3', bg:'#E6F6FB', tx:'#1A6B82' },
+  work:      { label:'Work',       icon:'💼', color:'#B5A4F5', bg:'#EEEAFF', tx:'#4A2FA0' },
+  birthday:  { label:'Birthday',   icon:'🎂', color:'#FBBF24', bg:'#FFFBEB', tx:'#92650A' },
+  menstrual: { label:'Menstrual',  icon:'🌸', color:'#F87171', bg:'#FFF1F1', tx:'#9B1F1F' },
+  workevent: { label:'Work Event', icon:'📌', color:'#4ADE80', bg:'#EDFFF5', tx:'#156535' },
+};
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS_SHORT = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+
+// ─── STATE ────────────────────────────────────────────────────────
+let today = new Date();
+let cur = new Date(today.getFullYear(), today.getMonth(), 1);
+let selectedDate = toStr(today);
+let events = loadEvents();
+let view = 'month';
+let editingId = null;
+let selectedCat = 'personal';
+let selectedRecur = 'none';
+let sheetDate = null;
+
+// ─── UTILS ────────────────────────────────────────────────────────
+function toStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fromStr(s){ const[y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+function loadEvents(){
+  try{ return JSON.parse(localStorage.getItem('petal_events')||'[]'); }catch{ return []; }
+}
+function saveEvents(){ localStorage.setItem('petal_events', JSON.stringify(events)); }
+
+function getEventsForDate(dateStr){
+  const d = fromStr(dateStr);
+  const dow = d.getDay(); // 0=Sun
+  return events.filter(ev => {
+    if(ev.date === dateStr) return true;
+    if(ev.recurring === 'none') return false;
+    const evD = fromStr(ev.date);
+    if(d <= evD) return false;
+    if(ev.recurring === 'daily') return true;
+    if(ev.recurring === 'weekly') return d.getDay() === evD.getDay();
+    if(ev.recurring === 'monthly') return d.getDate() === evD.getDate();
+    return false;
+  });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ─── RENDER LEGEND ────────────────────────────────────────────────
+function renderLegend(){
+  const el = document.getElementById('legend');
+  el.innerHTML = Object.entries(CATS).map(([k,v])=>
+    `<div class="legend-item">
+      <div class="legend-dot" style="background:${v.color}"></div>
+      ${v.icon} ${v.label}
+    </div>`
+  ).join('');
+}
+
+// ─── DAY COLOURS ─────────────────────────────────────────────────
+const DC_COLOURS = {
+  red:    { label:'Leave',   hex:'#F87171' },
+  green:  { label:'Office',  hex:'#4ADE80' },
+  purple: { label:'WFH',     hex:'#A78BFA' },
+  black:  { label:'Holiday', hex:'#2D2245' },
+};
+let dayColors = JSON.parse(localStorage.getItem('petal_day_colors')||'{}');
+function saveDayColors(){ localStorage.setItem('petal_day_colors', JSON.stringify(dayColors)); }
+
+
+
+// ─── QUICK NOTES STORAGE ─────────────────────────────────────────
+let quickNotes = JSON.parse(localStorage.getItem('petal_qnotes')||'{}');
+function saveQNotes(){ localStorage.setItem('petal_qnotes', JSON.stringify(quickNotes)); }
+
+// ─── MONTH VIEW ───────────────────────────────────────────────────
+function renderMonth(){
+  const year = cur.getFullYear(), month = cur.getMonth();
+  document.getElementById('monthTitle').innerHTML =
+    `${MONTHS[month]} <em>${year}</em>`;
+
+  const grid = document.getElementById('monthGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(year, month, 1);
+  let startDow = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+  const todayStr = toStr(today);
+
+  // Only show rows needed — no extra blank row
+  const totalCells = startDow + daysInMonth;
+  const rows = Math.ceil(totalCells / 7);
+  const cells = rows * 7;
+
+  for(let i=0; i<cells; i++){
+    let dayNum, dateStr, isOther=false;
+    if(i < startDow){
+      dayNum = prevDays - startDow + i + 1;
+      dateStr = toStr(new Date(year, month-1, dayNum));
+      isOther = true;
+    } else if(i >= startDow + daysInMonth){
+      dayNum = i - startDow - daysInMonth + 1;
+      dateStr = toStr(new Date(year, month+1, dayNum));
+      isOther = true;
+    } else {
+      dayNum = i - startDow + 1;
+      dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+    }
+
+    const isTodayCell = dateStr === todayStr;
+    const isSelected = dateStr === selectedDate;
+    const dow = fromStr(dateStr).getDay();
+    const evs = getEventsForDate(dateStr);
+    const catKeys = [...new Set(evs.map(e=>e.category))];
+    const dc = dayColors[dateStr] || '';
+    const hasQnote = !!quickNotes[dateStr];
+
+    const cell = document.createElement('div');
+    cell.className = 'day-cell'
+      + (isOther ? ' other-month' : '')
+      + (isTodayCell ? ' today' : '')
+      + (isSelected && !isTodayCell ? ' selected' : '')
+      + (dow === 0 ? ' sunday' : '')
+      + (dc ? ` dc-${dc}` : '');
+
+    cell.innerHTML = `
+      <div class="day-num">${dayNum}</div>
+      <div class="icons-row">
+        ${catKeys.slice(0,4).map(k=>`<span class="cat-icon">${CATS[k]?.icon||'●'}</span>`).join('')}
+        ${hasQnote ? '<span class="cat-icon">📝</span>' : ''}
+      </div>
+    `;
+
+    cell.addEventListener('click', ()=>{
+      selectedDate = dateStr;
+      openSheet(dateStr);
+      renderMonth();
+    });
+
+    grid.appendChild(cell);
+  }
+}
+
+// ─── WEEK VIEW ────────────────────────────────────────────────────
+function renderWeek(){
+  const year = cur.getFullYear(), month = cur.getMonth();
+  document.getElementById('monthTitle').innerHTML =
+    `${MONTHS[month]} <em>${year}</em>`;
+
+  // Find Monday of the week containing selectedDate
+  const selD = fromStr(selectedDate);
+  const dow = (selD.getDay()+6)%7; // 0=Mon
+  const monday = new Date(selD);
+  monday.setDate(selD.getDate()-dow);
+
+  const header = document.getElementById('weekHeader');
+  const evBox = document.getElementById('weekEvents');
+  header.innerHTML=''; evBox.innerHTML='';
+
+  const dayNames = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const todayStr = toStr(today);
+
+  for(let i=0;i<7;i++){
+    const d = new Date(monday); d.setDate(monday.getDate()+i);
+    const ds = toStr(d);
+    const isToday = ds===todayStr;
+    const isSel = ds===selectedDate;
+    const isSun = d.getDay()===0;
+    const wh = document.createElement('div');
+    wh.className='wh-day'+(isToday?' today':'')+(isSel&&!isToday?' selected':'')+(isSun?' sunday':'');
+    wh.innerHTML=`<div class="wh-label">${dayNames[i]}</div><div class="wh-num">${d.getDate()}</div>`;
+    wh.onclick=()=>{ selectedDate=ds; sheetDate=ds; renderWeek(); openSheet(ds); };
+    header.appendChild(wh);
+  }
+
+  // Show all days' events
+  for(let i=0;i<7;i++){
+    const d = new Date(monday); d.setDate(monday.getDate()+i);
+    const ds = toStr(d);
+    const evs = getEventsForDate(ds);
+    const sec = document.createElement('div');
+    sec.className='week-day-section';
+    const label = `${dayNames[i]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    sec.innerHTML=`<div class="wds-header">${label}</div>`;
+    if(evs.length===0){
+      sec.innerHTML+=`<div class="wds-empty">No events</div>`;
+    } else {
+      evs.forEach(ev=>{
+        sec.appendChild(buildEventCard(ev, ds));
+      });
+    }
+    evBox.appendChild(sec);
+  }
+}
+
+// ─── EVENT CARD ───────────────────────────────────────────────────
+function buildEventCard(ev, dateStr){
+  const cat = CATS[ev.category]||CATS.personal;
+  const div = document.createElement('div');
+  div.className='event-card';
+  div.style.background=cat.bg;
+  const recurLabel = ev.recurring!=='none'?`<span class="ev-recur">&#8635; ${ev.recurring}</span>`:'';
+  const timeLabel = ev.time?`<span class="ev-time">&#128336; ${ev.time}</span>`:'';
+  div.innerHTML=`
+    <div class="ev-icon">${cat.icon}</div>
+    <div class="ev-body">
+      <span class="ev-prefix" style="color:${cat.color}">${cat.label}</span>
+      <div class="ev-title" style="color:${cat.tx}">${ev.title}</div>
+      <div class="ev-meta">${timeLabel}${recurLabel}</div>
+      ${ev.notes?`<div class="ev-meta" style="margin-top:3px;white-space:normal;opacity:.8">${ev.notes}</div>`:''}
+    </div>
+    <button class="ev-del" onclick="deleteEv('${ev.id}','${dateStr}',event)">&#215;</button>
+  `;
+  div.onclick=(e)=>{ if(!e.target.closest('.ev-del')){ openModal(dateStr, ev); } };
+  return div;
+}
+
+// ─── QUICK NOTE CARD ──────────────────────────────────────────────
+function buildQnoteCard(dateStr){
+  const text = quickNotes[dateStr];
+  if(!text) return null;
+  const div = document.createElement('div');
+  div.className='qnote-card';
+  div.innerHTML=`
+    <span class="qnote-icon">&#128221;</span>
+    <span class="qnote-text">${text}</span>
+    <button class="qnote-del" onclick="deleteQnote('${dateStr}',event)">&#215;</button>
+  `;
+  div.onclick=(e)=>{ if(!e.target.closest('.qnote-del')){ openQnote(dateStr); } };
+  return div;
+}
+
+// ─── BOTTOM SHEET ─────────────────────────────────────────────────
+function renderSheetColorPicker(dateStr){
+  const current = dayColors[dateStr] || '';
+  const btns = document.getElementById('sheetColorBtns');
+  btns.innerHTML = Object.entries(DC_COLOURS).map(([k,v])=>
+    `<button class="sc-btn${current===k?' active':''}"
+       style="color:${v.hex}"
+       onclick="setDayColor('${dateStr}','${k}')">
+      <div class="sc-swatch" style="background:${v.hex};${current===k?'box-shadow:0 2px 8px '+v.hex+'88':''}"></div>
+      <span class="sc-label" style="color:${current===k?v.hex:'var(--text2)'}">${v.label}</span>
+    </button>`
+  ).join('');
+}
+
+function clearDayColor(){
+  if(!sheetDate) return;
+  delete dayColors[sheetDate];
+  saveDayColors();
+  renderSheetColorPicker(sheetDate);
+  render();
+  showToast('Colour cleared');
+}
+
+function setDayColor(dateStr, color){
+  if(dayColors[dateStr]===color){ delete dayColors[dateStr]; }
+  else { dayColors[dateStr] = color; }
+  saveDayColors();
+  renderSheetColorPicker(dateStr);
+  render();
+}
+
+function openSheet(dateStr){
+  sheetDate = dateStr;
+  const d = fromStr(dateStr);
+  document.getElementById('sheetDate').innerHTML =
+    `${DAYS_SHORT[(d.getDay()+6)%7]}, ${d.getDate()} <em>${MONTHS[d.getMonth()]}</em>`;
+  renderSheetColorPicker(dateStr);
+  renderSheetBody(dateStr);
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('bottomSheet').classList.add('open');
+}
+
+function renderSheetBody(dateStr){
+  const body = document.getElementById('sheetBody');
+  body.innerHTML='';
+  const evs = getEventsForDate(dateStr);
+  const qnCard = buildQnoteCard(dateStr);
+  if(qnCard) body.appendChild(qnCard);
+  if(evs.length===0 && !quickNotes[dateStr]){
+    body.innerHTML=`<div class="sheet-empty"><span class="empty-icon">&#127807;</span>No events yet.<br>Tap + to add one!</div>`;
+  } else {
+    evs.forEach(ev=>body.appendChild(buildEventCard(ev, dateStr)));
+  }
+}
+
+function closeSheet(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('bottomSheet').classList.remove('open');
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────
+function buildCatGrid(){
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML = Object.entries(CATS).map(([k,v])=>
+    `<button class="cat-btn${k===selectedCat?' selected':''}" data-cat="${k}" onclick="selectCat(this)"
+       style="color:${v.tx};border-color:${k===selectedCat?v.color:'transparent'};background:${k===selectedCat?v.bg:'var(--bg)'}">
+      <span class="cat-emoji">${v.icon}</span>
+      <span class="cat-lbl">${v.label}</span>
+    </button>`
+  ).join('');
+}
+
+function openModal(dateStr, ev){
+  editingId = null;
+  selectedCat = 'personal';
+  selectedRecur = 'none';
+  const ds = dateStr || sheetDate || toStr(today);
+
+  document.getElementById('modalTitle').textContent = ev ? 'Edit Event' : 'New Event';
+  document.getElementById('evTitle').value = ev?.title || '';
+  document.getElementById('evDate').value = ev?.date || ds;
+  document.getElementById('evTime').value = ev?.time || '';
+  document.getElementById('evNotes').value = ev?.notes || '';
+  document.getElementById('reminderToggle').checked = ev?.reminder || false;
+  document.getElementById('reminderTime').value = ev?.reminderTime || 15;
+  document.getElementById('reminderOpts').classList.toggle('show', ev?.reminder||false);
+
+  if(ev){ editingId=ev.id; selectedCat=ev.category||'personal'; selectedRecur=ev.recurring||'none'; }
+
+  // Reset recur buttons
+  document.querySelectorAll('.recur-btn').forEach(b=>{
+    b.classList.toggle('selected', b.dataset.recur===selectedRecur);
+  });
+
+  buildCatGrid();
+  document.getElementById('modalWrap').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modalWrap').classList.remove('open');
+  editingId=null;
+}
+
+function selectCat(btn){
+  selectedCat=btn.dataset.cat;
+  buildCatGrid();
+}
+
+function selectRecur(btn){
+  selectedRecur=btn.dataset.recur;
+  document.querySelectorAll('.recur-btn').forEach(b=>b.classList.toggle('selected',b.dataset.recur===selectedRecur));
+}
+
+function toggleReminder(cb){
+  document.getElementById('reminderOpts').classList.toggle('show', cb.checked);
+  if(cb.checked) requestNotifPermission();
+}
+
+function saveEvent(){
+  const title = document.getElementById('evTitle').value.trim();
+  const date  = document.getElementById('evDate').value;
+  if(!title){ showToast('⚠️ Please enter a title'); return; }
+  if(!date)  { showToast('⚠️ Please pick a date'); return; }
+
+  const ev = {
+    id:          editingId || uid(),
+    category:    selectedCat,
+    title,
+    date,
+    time:         document.getElementById('evTime').value,
+    notes:        document.getElementById('evNotes').value.trim(),
+    recurring:    selectedRecur,
+    reminder:     document.getElementById('reminderToggle').checked,
+    reminderTime: parseInt(document.getElementById('reminderTime').value),
+  };
+
+  if(editingId){
+    events = events.map(e=>e.id===editingId?ev:e);
+    showToast('✏️ Event updated!');
+  } else {
+    events.push(ev);
+    showToast('✨ Event saved!');
+  }
+  saveEvents();
+  rescheduleAfterSave();
+  closeModal();
+  if(sheetDate) renderSheetBody(sheetDate);
+  render();
+}
+
+function deleteEv(id, dateStr, e){
+  e.stopPropagation();
+  const ev = events.find(ev=>ev.id===id);
+  if(!ev) return;
+  if(ev.recurring!=='none'){
+    if(!confirm('Delete all occurrences of this recurring event?')) return;
+  }
+  events = events.filter(ev=>ev.id!==id);
+  saveEvents();
+  renderSheetBody(dateStr);
+  render();
+  showToast('🗑️ Event deleted');
+}
+
+// ─── VIEW SWITCH ──────────────────────────────────────────────────
+function setView(v){
+  view=v;
+  document.getElementById('monthVBtn').classList.toggle('active',v==='month');
+  document.getElementById('weekVBtn').classList.toggle('active',v==='week');
+  document.getElementById('monthView').classList.toggle('hidden',v!=='month');
+  document.getElementById('weekView').classList.toggle('hidden',v!=='week');
+  render();
+}
+
+function render(){
+  if(view==='month') renderMonth();
+  else renderWeek();
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────
+document.getElementById('prevBtn').onclick=()=>{
+  if(view==='month') cur.setMonth(cur.getMonth()-1);
+  else { const d=fromStr(selectedDate); d.setDate(d.getDate()-7); selectedDate=toStr(d); cur=new Date(d.getFullYear(),d.getMonth(),1); }
+  render();
+};
+document.getElementById('nextBtn').onclick=()=>{
+  if(view==='month') cur.setMonth(cur.getMonth()+1);
+  else { const d=fromStr(selectedDate); d.setDate(d.getDate()+7); selectedDate=toStr(d); cur=new Date(d.getFullYear(),d.getMonth(),1); }
+  render();
+};
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────
+// Strategy: SW stores reminders in its own cache and polls every minute.
+// This survives screen lock on Android when installed as PWA from GitHub Pages.
+
+let swReg = null;
+
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) {
+    console.warn('SW not supported');
+    return;
+  }
+  try {
+    swReg = await navigator.serviceWorker.register('./sw.js');
+    await navigator.serviceWorker.ready;
+    console.log('[App] SW registered successfully');
+  } catch(err) {
+    console.warn('[App] SW registration failed:', err);
+  }
+}
+
+function updateNotifBar() {
+  const bar = document.getElementById('notifBar');
+  const txt = document.getElementById('notifBarText');
+  const right = document.getElementById('notifBarRight');
+  if (!('Notification' in window)) {
+    bar.className = 'notif-bar denied';
+    txt.textContent = 'Notifications not supported — use Chrome';
+    right.textContent = '';
+    return;
+  }
+  const p = Notification.permission;
+  if (p === 'granted') {
+    bar.className = 'notif-bar granted';
+    txt.textContent = 'Notifications active — reminders will fire on time';
+    right.textContent = 'Tap to test';
+  } else if (p === 'denied') {
+    bar.className = 'notif-bar denied';
+    txt.textContent = 'Notifications blocked — enable in Chrome site settings';
+    right.textContent = '';
+  } else {
+    bar.className = 'notif-bar default';
+    txt.textContent = 'Tap to enable notifications for reminders';
+    right.textContent = 'Required';
+  }
+}
+
+function handleNotifTap() {
+  if (Notification.permission === 'granted') {
+    sendRemindersToSW();
+    // Fire a test notification immediately so user can confirm it works
+    if(swReg) {
+      swReg.active && swReg.active.postMessage({ type: 'TEST' });
+    } else {
+      new Notification('Petal Calendar', { body: 'Reminders are active! You will be notified on time.', icon: './icon.png' });
+    }
+    showToast('Test notification sent!');
+  } else {
+    requestNotifPermission();
+  }
+}
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      showToast('Notifications enabled!');
+      sendRemindersToSW();
+    }
+  } else if (Notification.permission === 'granted') {
+    sendRemindersToSW();
+  }
+  updateNotifBar();
+}
+
+// Build list of all upcoming reminders and send to SW for persistent storage
+function buildReminderList() {
+  const reminders = [];
+  const now = new Date();
+  for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + dayOffset);
+    const ds = toStr(d);
+    getEventsForDate(ds).forEach(ev => {
+      if (!ev.reminder || !ev.time) return;
+      const [h, m] = ev.time.split(':').map(Number);
+      const fireDate = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0);
+      const fireAt = fireDate.getTime() - (ev.reminderTime * 60 * 1000);
+      if (fireAt <= now.getTime()) return;
+      const cat = CATS[ev.category] || CATS.personal;
+      reminders.push({
+        id:     ev.id + '_' + ds,
+        fireAt,
+        title:  cat.icon + ' ' + cat.label + ': ' + ev.title,
+        body:   'At ' + ev.time + (ev.notes ? '  —  ' + ev.notes : '') + '
+Petal Calendar',
+        tag:    ev.id + '_' + ds,
+      });
+    });
+  }
+  return reminders;
+}
+
+function sendRemindersToSW() {
+  if (Notification.permission !== 'granted') return;
+  const reminders = buildReminderList();
+
+  // Send to SW for lock screen (background) delivery
+  const ctrl = swReg?.active || navigator.serviceWorker?.controller;
+  if (ctrl) {
+    ctrl.postMessage({ type: 'SCHEDULE', reminders });
+    console.log('Sent', reminders.length, 'reminders to SW');
+  }
+
+  // ALSO schedule with JS setTimeout as a safety net (works when app is open / screen on)
+  reminders.forEach(r => {
+    const delay = r.fireAt - Date.now();
+    if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
+      setTimeout(() => {
+        if (Notification.permission === 'granted') {
+          try {
+            if (swReg) {
+              swReg.showNotification(r.title, {
+                body: r.body, tag: r.tag,
+                vibrate: [300, 100, 300, 100, 300],
+                requireInteraction: true,
+                icon: 'https://SharathHub2026.github.io/petal-calendar/icon.png'
+              });
+            } else {
+              new Notification(r.title, { body: r.body, tag: r.tag });
+            }
+          } catch(e) { new Notification(r.title, { body: r.body }); }
+        }
+      }, delay);
+    }
+  });
+}
+
+function rescheduleAfterSave() {
+  setTimeout(sendRemindersToSW, 800);
+}
+
+// Re-send schedule every 30 minutes so SW always has fresh list
+setInterval(sendRemindersToSW, 30 * 60 * 1000);
+
+// ─── SWIPE TO CLOSE SHEET ─────────────────────────────────────────
+let touchStartY=0;
+document.getElementById('bottomSheet').addEventListener('touchstart',e=>{ touchStartY=e.touches[0].clientY; },{passive:true});
+document.getElementById('bottomSheet').addEventListener('touchend',e=>{
+  if(e.changedTouches[0].clientY - touchStartY > 60) closeSheet();
+},{passive:true});
+
+// ─── QUICK NOTE MODAL ────────────────────────────────────────────
+function openQnote(dateStr){
+  const ds = dateStr || sheetDate || toStr(today);
+  sheetDate = ds;
+  document.getElementById('qnoteInput').value = quickNotes[ds] || '';
+  document.getElementById('qnoteModal').classList.add('open');
+}
+function closeQnote(){
+  document.getElementById('qnoteModal').classList.remove('open');
+}
+function saveQnote(){
+  const text = document.getElementById('qnoteInput').value.trim();
+  const ds = sheetDate || toStr(today);
+  if(text) quickNotes[ds] = text;
+  else delete quickNotes[ds];
+  saveQNotes();
+  closeQnote();
+  renderSheetBody(ds);
+  render();
+  showToast(text ? '&#128221; Note saved!' : '&#128221; Note removed');
+}
+function deleteQnote(dateStr, e){
+  e.stopPropagation();
+  delete quickNotes[dateStr];
+  saveQNotes();
+  renderSheetBody(dateStr);
+  render();
+  showToast('Note removed');
+}
+
+// ─── QUICK NOTE MODAL ────────────────────────────────────────────
+function openQnote(dateStr){
+  const ds = dateStr || sheetDate || toStr(today);
+  sheetDate = ds;
+  document.getElementById('qnoteInput').value = quickNotes[ds] || '';
+  document.getElementById('qnoteModal').classList.add('open');
+}
+function closeQnote(){
+  document.getElementById('qnoteModal').classList.remove('open');
+}
+function saveQnote(){
+  const text = document.getElementById('qnoteInput').value.trim();
+  const ds = sheetDate || toStr(today);
+  if(text) quickNotes[ds] = text;
+  else delete quickNotes[ds];
+  saveQNotes();
+  closeQnote();
+  renderSheetBody(ds);
+  render();
+  showToast(text ? '\u{1F4DD} Note saved!' : '\u{1F4DD} Note removed');
+}
+function deleteQnote(dateStr, e){
+  e.stopPropagation();
+  delete quickNotes[dateStr];
+  saveQNotes();
+  renderSheetBody(dateStr);
+  render();
+  showToast('Note removed');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+renderLegend();
+render();
+registerSW().then(() => {
+  requestNotifPermission();
+  updateNotifBar();
+});
+</script>
+</body>
+</html>
